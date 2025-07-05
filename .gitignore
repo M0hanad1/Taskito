@@ -1,0 +1,15 @@
+obj
+*.o
+*.ko
+*.obj
+*.elf
+
+bin
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+*.db
