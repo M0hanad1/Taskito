@@ -1,5 +1,5 @@
-#ifndef _INC_PARSER_HEADER
-#define _INC_PARSER_HEADER
+#ifndef _INC_HEADER_H
+#define _INC_HEADER_H
 
 #define MAGIC_VALUE 0x4D4F48
 #define VERSION 1.0

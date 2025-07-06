@@ -1,4 +1,4 @@
-#include "parse.h"
+#include "header.h"
 
 #include <fcntl.h>
 #include <stdio.h>
@@ -56,20 +56,26 @@ int validateHeader(int fileDesc, struct FileHeader **headerOut) {
 
     if (read(fileDesc, header, sizeof(struct FileHeader)) != sizeof(struct FileHeader)) {
         printf("Failed to read the file\n");
+        free(header);
         return STATUS_ERROR;
     }
+
     if (header->magic != MAGIC_VALUE || header->version != VERSION) {
         printf("Invalid file header values\n");
+        free(header);
         return STATUS_ERROR;
     }
 
     struct stat fileStates = {0};
     if (fstat(fileDesc, &fileStates) == STATUS_ERROR) {
         perror("fstat");
+        free(header);
         return STATUS_ERROR;
     }
+
     if (fileStates.st_size != header->size) {
         printf("Unmatched header and file sizes\n");
+        free(header);
         return STATUS_ERROR;
     }
 

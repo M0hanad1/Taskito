@@ -2,42 +2,39 @@
 #include <getopt.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "common.h"
-#include "parse.h"
+#include "header.h"
+#include "tasks.h"
 
-typedef struct {
+struct Flags {
     char *file;
     bool new;
+    bool read;
     bool delete;
     bool append;
-} Flags;
-
-typedef struct {
-    char *title;
-    char *description;
-    bool done;
-} Task;
+};
 
 void usage(char *argv[]) {
     printf("Usage: %s -n -f <database_name>\n", argv[0]);
     printf("\t -f - (required) Path to database file\n");
-    printf("\t -a - Append to the database\n");
+    printf("\t -r - Read all tasks\n");
     printf("\t -n - Create a new database file\n");
     printf("\t -d - Delete the whole database\n");
 }
 
 int main(int argc, char *argv[]) {
-    Flags flags = {0};
+    struct Flags flags = {0};
     char c = 0;
 
-    while ((c = getopt(argc, argv, "ndf:")) != STATUS_ERROR) {
+    while ((c = getopt(argc, argv, "ndrf:")) != STATUS_ERROR) {
         switch (c) {
             case 'n':
                 flags.new = true;
                 break;
-            case 'a':
-                flags.append = true;
+            case 'r':
+                flags.read = true;
                 break;
             case 'd':
                 flags.delete = true;
@@ -68,7 +65,7 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
-    int fileDesc = open(flags.file, O_RDWR | (flags.new << 8 & O_CREAT));
+    int fileDesc = open(flags.file, O_RDWR | (flags.new << 8 & O_CREAT), 0666);
 
     if (fileDesc == STATUS_ERROR) {
         if (!flags.new) {
@@ -96,6 +93,26 @@ int main(int argc, char *argv[]) {
 
     printf("Header magic: %u\n", header->magic);
     printf("Header version: %hu\n", header->version);
+    printf("Header count: %hu\n", header->count);
+    printf("Header size: %ld\n", header->size);
+
+    // Adding tasks
+    // struct Task tasks[] = {{"First", "This is a description", false}, {"Second", "This is another desc", true}};
+    // if (updateTasks(fileDesc, header, tasks) == STATUS_ERROR) return 0;
+    // printf("Tasks are added successfully\n");
+
+    if (flags.read) {
+        struct Task *output = calloc(header->count, sizeof(struct Task));
+        if (getTasks(fileDesc, header, &output) == STATUS_ERROR) {
+            free(output);
+            return 0;
+        }
+        for (int i = 0; i < header->count; i++) {
+            printf("Title: %s, Description: %s, Done: %d\n", output[i].title, output[i].description, output[i].done);
+        }
+        free(output);
+    }
+
     printf("Header count: %hu\n", header->count);
     printf("Header size: %ld\n", header->size);
 }
