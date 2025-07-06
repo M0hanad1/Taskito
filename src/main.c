@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 #include "common.h"
+#include "parse.h"
 
 typedef struct {
     char *file;
@@ -81,4 +82,20 @@ int main(int argc, char *argv[]) {
     printf("Create new file: %d\n", flags.new);
     printf("File path: %s\n", flags.file);
     printf("File descriptor: %d\n", fileDesc);
+
+    struct FileHeader *header = &(struct FileHeader){0};
+    int parseOutput = 0;
+
+    if (flags.new) {
+        parseOutput = createHeader(fileDesc, &header);
+    } else {
+        parseOutput = validateHeader(fileDesc, &header);
+    }
+
+    if (parseOutput == STATUS_ERROR) return 0;
+
+    printf("Header magic: %u\n", header->magic);
+    printf("Header version: %hu\n", header->version);
+    printf("Header count: %hu\n", header->count);
+    printf("Header size: %ld\n", header->size);
 }
