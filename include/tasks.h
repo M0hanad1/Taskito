@@ -12,7 +12,9 @@ struct Task {
 };
 
 int getTasks(int fileDesc, struct FileHeader *header, struct Task **tasksOut);
-int searchTask(int fileDesc, char *search, struct Task **taskOut);
 int addTask(struct FileHeader *header, char *taskArgv, struct Task **tasksOut);
+int removeTask(struct FileHeader *header, char *search, struct Task **tasksOut);
+// int doneTask(struct FileHeader *header, struct Task *tasks, char *search);
+int searchTask(struct FileHeader *header, struct Task *tasks, char *search, struct Task **tasksOut, bool onlyOne);
 
 #endif

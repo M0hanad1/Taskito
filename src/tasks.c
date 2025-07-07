@@ -1,12 +1,28 @@
 #include "tasks.h"
 
+#include <ctype.h>
 #include <fcntl.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "common.h"
 #include "header.h"
+#include "utils.h"
+
+static bool checkMatching(struct Task *task, char *value) {
+    char *title = lower(task->title);
+    char *description = lower(task->description);
+    char *search = lower(value);
+    bool result = false;
+
+    if (strstr(title, search) && strstr(description, search)) result = true;
+    free(title);
+    free(description);
+    free(search);
+    return result;
+}
 
 int getTasks(int fileDesc, struct FileHeader *header, struct Task **tasksOut) {
     if (fileDesc < 0) {
@@ -30,40 +46,25 @@ int getTasks(int fileDesc, struct FileHeader *header, struct Task **tasksOut) {
     return STATUS_SUCCESS;
 }
 
-int searchTask(int fileDesc, char *search, struct Task **taskOut) {
-    struct Task currTask = {0};
+int searchTask(struct FileHeader *header, struct Task *tasks, char *search, struct Task **tasksOut, bool onlyOne) {
     int count = 0;
-    int readValue = 0;
 
-    if (lseek(fileDesc, sizeof(struct FileHeader), SEEK_SET) == STATUS_ERROR) {
-        perror("lseek");
-        return STATUS_ERROR;
-    }
-
-    while ((readValue = read(fileDesc, &currTask, sizeof(struct Task))) > 0) {
-        if (!strstr(currTask.title, search) && !strstr(currTask.description, search)) continue;
+    for (int i = 0; i < header->count; i++) {
+        if (!checkMatching(&tasks[i], search)) continue;
         count++;
-        *taskOut = realloc(*taskOut, count * sizeof(struct Task));
-        if (!taskOut) {
+        struct Task *temp = realloc(*tasksOut, count * sizeof(struct Task));
+
+        if (!temp) {
             printf("Failed to reallocate memory for searching\n");
-            free(*taskOut);
             return STATUS_ERROR;
         }
-        (*taskOut)[count - 1] = currTask;
+
+        temp[count - 1] = tasks[i];
+        *tasksOut = temp;
+        if (onlyOne) break;
     }
 
-    if (readValue == STATUS_ERROR) {
-        perror("read");
-        free(*taskOut);
-        return STATUS_ERROR;
-    }
-
-    if (count == 0) {
-        printf("Task isn't found\n");
-        free(*taskOut);
-        return STATUS_ERROR;
-    }
-
+    if (count == 0) printf("Task isn't found\n");
     return count;
 }
 
@@ -79,17 +80,44 @@ int addTask(struct FileHeader *header, char *taskArgv, struct Task **tasksOut) {
     strcpy(newTask.description, strtok(NULL, ","));
     newTask.done = strtok(NULL, ",")[0] == '1' ? 1 : 0;
 
-    *tasksOut = realloc(*tasksOut, (header->count + 1) * sizeof(struct Task));
+    struct Task *temp = realloc(*tasksOut, (header->count + 1) * sizeof(struct Task));
 
-    if (!*tasksOut) {
+    if (!temp) {
         printf("Failed to reallocate memory\n");
-        free(*tasksOut);
         return STATUS_ERROR;
     }
 
     header->count++;
     header->size = sizeof(struct FileHeader) + (sizeof(struct Task) * header->count);
 
-    (*tasksOut)[header->count - 1] = newTask;
+    temp[header->count - 1] = newTask;
+    *tasksOut = temp;
     return STATUS_SUCCESS;
+}
+
+int removeTask(struct FileHeader *header, char *search, struct Task **tasksOut) {
+    bool removed = false;
+    for (int i = 0; i < header->count; i++) {
+        if (!removed && checkMatching(&(*tasksOut)[i], search)) removed = true;
+        if (removed && i < header->count - 1) (*tasksOut)[i] = (*tasksOut)[i + 1];
+    }
+    if (removed) {
+        header->count--;
+        header->size -= sizeof(struct Task);
+        if (header->count == 0) {
+            free(*tasksOut);
+            *tasksOut = NULL;
+            return STATUS_SUCCESS;
+        }
+        struct Task *temp = realloc(*tasksOut, sizeof(struct Task) * header->count);
+        if (!temp) {
+            printf("\n\nhere here here here\n\n");
+            printf("Failed to reallocate memory\n");
+            return STATUS_ERROR;
+        }
+        *tasksOut = temp;
+        return STATUS_SUCCESS;
+    }
+    printf("Task isn't found\n");
+    return STATUS_ERROR;
 }

@@ -13,15 +13,16 @@ struct Flags {
     char *file;
     char *add;
     char *search;
+    char *remove;
     bool new;
-    bool read;
+    bool get;
     bool delete;
 };
 
 void usage(char *argv[]) {
     printf("Usage: %s -n -f <database_name>\n", argv[0]);
     printf("\t -f - (required) Path to database file\n");
-    printf("\t -r - Read all tasks\n");
+    printf("\t -r - get all tasks\n");
     printf("\t -n - Create a new database file\n");
     printf("\t -d - Delete the whole database\n");
 }
@@ -33,13 +34,13 @@ int main(int argc, char *argv[]) {
     struct Flags flags = {0};
     char c = 0;
 
-    while ((c = getopt(argc, argv, "na:ds:rf:")) != STATUS_ERROR) {
+    while ((c = getopt(argc, argv, "na:dgs:r:f:")) != STATUS_ERROR) {
         switch (c) {
             case 'n':
                 flags.new = true;
                 break;
-            case 'r':
-                flags.read = true;
+            case 'g':
+                flags.get = true;
                 break;
             case 'd':
                 flags.delete = true;
@@ -52,6 +53,9 @@ int main(int argc, char *argv[]) {
                 break;
             case 's':
                 flags.search = optarg;
+                break;
+            case 'r':
+                flags.remove = optarg;
                 break;
             case '?':
                 printf("Unkown option: %c\n", c);
@@ -112,7 +116,7 @@ int main(int argc, char *argv[]) {
         printf("Tasks are added successfully\n");
     }
 
-    if (flags.read) {
+    if (flags.get) {
         if (header->count == 0) {
             printf("There's no tasks to read\n");
         } else {
@@ -123,12 +127,21 @@ int main(int argc, char *argv[]) {
     }
 
     if (flags.search) {
-        struct Task *taskSearch = calloc(1, sizeof(struct Task));
+        struct Task *tasksSearch = {0};
         int count = 0;
-        if ((count = searchTask(fileDesc, flags.search, &taskSearch)) == STATUS_ERROR) goto cleanup;
-
+        if ((count = searchTask(header, tasks, flags.search, &tasksSearch, false)) < 1) {
+            free(tasksSearch);
+            goto cleanup;
+        }
         for (int i = 0; i < count; i++) {
-            printf("=====\nTitle: %s\nDescription: %s\nDone: %d\n=====\n", taskSearch[i].title, taskSearch[i].description, taskSearch[i].done);
+            printf("=====\nTitle: %s\nDescription: %s\nDone: %d\n=====\n", tasksSearch[i].title, tasksSearch[i].description, tasksSearch[i].done);
+        }
+    }
+
+    if (flags.remove) {
+        if (removeTask(header, flags.remove, &tasks) == STATUS_ERROR || saveData(fileDesc, header, tasks) == STATUS_ERROR) goto cleanup;
+        for (int i = 0; i < header->count; i++) {
+            printf("=====\nTitle: %s\nDescription: %s\nDone: %d\n=====\n", tasks[i].title, tasks[i].description, tasks[i].done);
         }
     }
 
