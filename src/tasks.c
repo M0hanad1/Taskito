@@ -32,27 +32,39 @@ int getTasks(int fileDesc, struct FileHeader *header, struct Task **tasksOut) {
 
 int searchTask(int fileDesc, char *search, struct Task **taskOut) {
     struct Task currTask = {0};
-    struct Task *tasks = {0};
     int count = 0;
+    int readValue = 0;
 
-    lseek(fileDesc, sizeof(struct FileHeader), SEEK_SET);
-    while (read(fileDesc, &currTask, sizeof(struct Task)) > 0) {
+    if (lseek(fileDesc, sizeof(struct FileHeader), SEEK_SET) == STATUS_ERROR) {
+        perror("lseek");
+        return STATUS_ERROR;
+    }
+
+    while ((readValue = read(fileDesc, &currTask, sizeof(struct Task))) > 0) {
         if (!strstr(currTask.title, search) && !strstr(currTask.description, search)) continue;
         count++;
-        tasks = realloc(tasks, count * sizeof(struct Task));
-        if (!tasks) {
-            printf("Failed to reallocate memory for searching");
-            free(tasks);
+        *taskOut = realloc(*taskOut, count * sizeof(struct Task));
+        if (!taskOut) {
+            printf("Failed to reallocate memory for searching\n");
+            free(*taskOut);
             return STATUS_ERROR;
         }
-        tasks[count - 1] = currTask;
+        (*taskOut)[count - 1] = currTask;
     }
-    if (count > 0) {
-        *taskOut = tasks;
-        return count;
+
+    if (readValue == STATUS_ERROR) {
+        perror("read");
+        free(*taskOut);
+        return STATUS_ERROR;
     }
-    free(tasks);
-    return STATUS_ERROR;
+
+    if (count == 0) {
+        printf("Task isn't found\n");
+        free(*taskOut);
+        return STATUS_ERROR;
+    }
+
+    return count;
 }
 
 int addTask(struct FileHeader *header, char *taskArgv, struct Task **tasksOut) {
@@ -63,9 +75,9 @@ int addTask(struct FileHeader *header, char *taskArgv, struct Task **tasksOut) {
 
     struct Task newTask = {0};
 
-    strcpy(newTask.title, strtok(taskArgv, ", "));
-    strcpy(newTask.description, strtok(NULL, ", "));
-    newTask.done = strtok(NULL, ", ")[0] == '1' ? 1 : 0;
+    strcpy(newTask.title, strtok(taskArgv, ","));
+    strcpy(newTask.description, strtok(NULL, ","));
+    newTask.done = strtok(NULL, ",")[0] == '1' ? 1 : 0;
 
     *tasksOut = realloc(*tasksOut, (header->count + 1) * sizeof(struct Task));
 
