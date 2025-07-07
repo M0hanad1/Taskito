@@ -11,8 +11,7 @@ struct FileHeader {
     long size;
 };
 
-int createHeader(int fileDesc, struct FileHeader **header);
+int createHeader(struct FileHeader **header);
 int validateHeader(int fileDesc, struct FileHeader **header);
-int writeHeader(int fileDesc, struct FileHeader *header);
 
 #endif

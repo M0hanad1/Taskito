@@ -6,14 +6,16 @@
 
 #include "common.h"
 #include "header.h"
+#include "parse.h"
 #include "tasks.h"
 
 struct Flags {
     char *file;
+    char *add;
+    char *search;
     bool new;
     bool read;
     bool delete;
-    bool append;
 };
 
 void usage(char *argv[]) {
@@ -28,7 +30,7 @@ int main(int argc, char *argv[]) {
     struct Flags flags = {0};
     char c = 0;
 
-    while ((c = getopt(argc, argv, "ndrf:")) != STATUS_ERROR) {
+    while ((c = getopt(argc, argv, "na:ds:rf:")) != STATUS_ERROR) {
         switch (c) {
             case 'n':
                 flags.new = true;
@@ -41,6 +43,12 @@ int main(int argc, char *argv[]) {
                 break;
             case 'f':
                 flags.file = optarg;
+                break;
+            case 'a':
+                flags.add = optarg;
+                break;
+            case 's':
+                flags.search = optarg;
                 break;
             case '?':
                 printf("Unkown option: %c\n", c);
@@ -73,6 +81,7 @@ int main(int argc, char *argv[]) {
         } else {
             printf("Couldn't create the database file");
         }
+        close(fileDesc);
         return 0;
     }
 
@@ -84,35 +93,58 @@ int main(int argc, char *argv[]) {
     int parseOutput = 0;
 
     if (flags.new) {
-        parseOutput = createHeader(fileDesc, &header);
+        parseOutput = createHeader(&header);
+        saveData(fileDesc, header, NULL);
     } else {
         parseOutput = validateHeader(fileDesc, &header);
     }
 
-    if (parseOutput == STATUS_ERROR) return 0;
+    if (parseOutput == STATUS_ERROR) {
+        close(fileDesc);
+        return 0;
+    };
 
     printf("Header magic: %u\n", header->magic);
     printf("Header version: %hu\n", header->version);
     printf("Header count: %hu\n", header->count);
     printf("Header size: %ld\n", header->size);
 
-    // Adding tasks
-    // struct Task tasks[] = {{"First", "This is a description", false}, {"Second", "This is another desc", true}};
-    // if (updateTasks(fileDesc, header, tasks) == STATUS_ERROR) return 0;
-    // printf("Tasks are added successfully\n");
+    struct Task *tasks = {0};
 
-    if (flags.read) {
-        struct Task *output = calloc(header->count, sizeof(struct Task));
-        if (getTasks(fileDesc, header, &output) == STATUS_ERROR) {
-            free(output);
-            return 0;
-        }
-        for (int i = 0; i < header->count; i++) {
-            printf("Title: %s, Description: %s, Done: %d\n", output[i].title, output[i].description, output[i].done);
-        }
-        free(output);
+    if (getTasks(fileDesc, header, &tasks) == STATUS_ERROR) {
+        close(fileDesc);
+        free(tasks);
+        return 0;
     }
 
+    if (flags.add) {
+        if (addTask(header, flags.add, &tasks) == STATUS_ERROR || saveData(fileDesc, header, tasks) == STATUS_ERROR) {
+            close(fileDesc);
+            return 0;
+        };
+        printf("Tasks are added successfully\n");
+    }
+
+    if (flags.read) {
+        for (int i = 0; i < header->count; i++) {
+            printf("=====\nTitle: %s\nDescription: %s\nDone: %d\n=====\n", tasks[i].title, tasks[i].description, tasks[i].done);
+        }
+    }
+
+    if (flags.search) {
+        struct Task *taskSearch = {0};
+        int count = 0;
+        if ((count = searchTask(fileDesc, flags.search, &taskSearch)) == STATUS_ERROR) {
+            printf("Task not found\n");
+        } else {
+            for (int i = 0; i < count; i++) {
+                printf("=====\nTitle: %s\nDescription: %s\nDone: %d\n=====\n", taskSearch[i].title, taskSearch[i].description, taskSearch[i].done);
+            }
+        }
+    }
+
+    free(tasks);
+    close(fileDesc);
     printf("Header count: %hu\n", header->count);
     printf("Header size: %ld\n", header->size);
 }

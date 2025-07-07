@@ -12,6 +12,7 @@ struct Task {
 };
 
 int getTasks(int fileDesc, struct FileHeader *header, struct Task **tasksOut);
-int updateTasks(int fileDesc, struct FileHeader *header, struct Task *tasks);
+int searchTask(int fileDesc, char *search, struct Task **taskOut);
+int addTask(struct FileHeader *header, char *taskArgv, struct Task **tasksOut);
 
 #endif

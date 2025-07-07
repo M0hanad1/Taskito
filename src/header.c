@@ -6,8 +6,9 @@
 #include <sys/stat.h>
 
 #include "common.h"
+#include "tasks.h"
 
-int createHeader(int fileDesc, struct FileHeader **headerOut) {
+int createHeader(struct FileHeader **headerOut) {
     struct FileHeader *header = calloc(1, sizeof(struct FileHeader));
     if (!header) {
         printf("Failed to allocate header\n");
@@ -19,25 +20,6 @@ int createHeader(int fileDesc, struct FileHeader **headerOut) {
     header->count = 0;
     header->size = sizeof(struct FileHeader);
     *headerOut = header;
-
-    return writeHeader(fileDesc, header);
-}
-
-int writeHeader(int fileDesc, struct FileHeader *header) {
-    if (fileDesc < 0) {
-        printf("Unvalid file descriptor\n");
-        return STATUS_ERROR;
-    }
-
-    if (lseek(fileDesc, 0, SEEK_SET) == STATUS_ERROR) {
-        perror("lseek");
-        return STATUS_ERROR;
-    }
-
-    if (write(fileDesc, header, sizeof(struct FileHeader)) == STATUS_ERROR) {
-        perror("write");
-        return STATUS_ERROR;
-    }
 
     return STATUS_SUCCESS;
 }
