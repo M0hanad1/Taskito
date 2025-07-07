@@ -65,7 +65,7 @@ int addTask(struct FileHeader *header, char *taskArgv, struct Task **tasksOut) {
 
     strcpy(newTask.title, strtok(taskArgv, ", "));
     strcpy(newTask.description, strtok(NULL, ", "));
-    newTask.done = strtok(NULL, ",")[0] == '1' ? 1 : 0;
+    newTask.done = strtok(NULL, ", ")[0] == '1' ? 1 : 0;
 
     *tasksOut = realloc(*tasksOut, (header->count + 1) * sizeof(struct Task));
 

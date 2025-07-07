@@ -6,7 +6,6 @@
 #include <sys/stat.h>
 
 #include "common.h"
-#include "tasks.h"
 
 int createHeader(struct FileHeader **headerOut) {
     struct FileHeader *header = calloc(1, sizeof(struct FileHeader));
