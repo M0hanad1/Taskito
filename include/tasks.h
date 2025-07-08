@@ -6,8 +6,8 @@
 #include "header.h"
 
 struct Task {
-    char title[50];
-    char description[200];
+    char title[51];
+    char description[201];
     bool done;
 };
 

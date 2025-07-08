@@ -5,16 +5,18 @@
 #include <stdlib.h>
 
 #include "common.h"
+#include "file.h"
 #include "header.h"
-#include "parse.h"
 #include "tasks.h"
 
-#define HANDLE_TASK(flag, taskFunc, tasksIn, msg)                                                                       \
-    if (flags.flag) {                                                                                                   \
-        entered = true;                                                                                                 \
-        if (taskFunc(header, flags.flag, tasksIn) == STATUS_ERROR || saveData(fileDesc, header, tasks) == STATUS_ERROR) \
-            goto cleanup;                                                                                               \
-        printf(msg "\n");                                                                                               \
+#define HANDLE_SAVE saveData(fileDesc, header, tasks) == STATUS_ERROR
+
+#define HANDLE_TASK(flag, taskFunc, tasksIn, msg)                                 \
+    if (flags.flag) {                                                             \
+        entered = true;                                                           \
+        if (taskFunc(header, flags.flag, tasksIn) == STATUS_ERROR || HANDLE_SAVE) \
+            goto cleanup;                                                         \
+        printf(msg "\n");                                                         \
     }
 
 struct Flags {
@@ -41,8 +43,8 @@ void usage(char *argv[]) {
 }
 
 int main(int argc, char *argv[]) {
-    struct Task *tasks = calloc(1, sizeof(struct Task));
-    struct FileHeader *header = calloc(1, sizeof(struct FileHeader));
+    struct Task *tasks = NULL;
+    struct FileHeader *header = NULL;
     int fileDesc = 0;
     struct Flags flags = {0};
     char c = 0;
@@ -80,6 +82,11 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    if (!flags.file) {
+        usage(argv);
+        goto cleanup;
+    }
+
     if (flags.delete) {
         if (remove(flags.file) == STATUS_ERROR) {
             printf("Couldn't delete the database\n");
@@ -95,16 +102,17 @@ int main(int argc, char *argv[]) {
     }
 
     if (flags.new) {
-        if (createHeader(&header) == STATUS_ERROR || saveData(fileDesc, header, NULL) == STATUS_ERROR) goto cleanup;
+        if (createHeader(&header) == STATUS_ERROR || HANDLE_SAVE) goto cleanup;
+        printf("Database file is created successfully\n");
     } else {
         if (validateHeader(fileDesc, &header) == STATUS_ERROR) goto cleanup;
     }
 
     if (getTasks(fileDesc, header, &tasks) == STATUS_ERROR) goto cleanup;
 
-    if (flags.add) HANDLE_TASK(add, addTask, &tasks, "Tasks are added successfully");
-    if (flags.mark) HANDLE_TASK(mark, doneTask, tasks, "Task mark is changed successfully");
-    if (flags.rem) HANDLE_TASK(rem, removeTask, &tasks, "Task is removed successfully");
+    HANDLE_TASK(add, addTask, &tasks, "Tasks are added successfully");
+    HANDLE_TASK(mark, doneTask, tasks, "Task mark is changed successfully");
+    HANDLE_TASK(rem, removeTask, &tasks, "Task is removed successfully");
     if (entered || flags.get) printTasks(tasks, header->count);
 
     if (flags.search) {

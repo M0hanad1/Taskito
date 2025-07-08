@@ -8,7 +8,7 @@ OBJ_DIR := obj
 BIN_DIR := bin
 
 # Files
-TARGET := $(BIN_DIR)/app
+TARGET := $(BIN_DIR)/taskito
 SRC := $(wildcard $(SRC_DIR)/*.c)
 OBJ := $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SRC))
 

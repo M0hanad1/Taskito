@@ -52,8 +52,8 @@ int searchTasks(struct FileHeader *header, struct Task *tasks, char *search, str
     for (int i = 0; i < header->count; i++) {
         if (!checkMatching(&tasks[i], search)) continue;
         count++;
-        struct Task *temp = realloc(*tasksOut, count * sizeof(struct Task));
 
+        struct Task *temp = realloc(*tasksOut, count * sizeof(struct Task));
         if (!temp) {
             printf("Failed to reallocate memory for searching\n");
             return STATUS_ERROR;
@@ -67,16 +67,31 @@ int searchTasks(struct FileHeader *header, struct Task *tasks, char *search, str
 }
 
 int addTask(struct FileHeader *header, char *taskArgv, struct Task **tasksOut) {
-    if (strlen(taskArgv) < 3) {
-        printf("You must provide three values to create a task (separated by ', ')\n");
+    struct Task newTask = {0};
+    int titleSize = sizeof(newTask.title) - 1;
+    int descriptionSize = sizeof(newTask.description) - 1;
+    char *title = strtok(taskArgv, ",");
+    char *description = strtok(NULL, ",");
+    char *done = strtok(NULL, ",");
+
+    if (!(title && description && done)) {
+        printf("You must provide three values to create a task (separated by ',')\n");
         return STATUS_ERROR;
     }
 
-    struct Task newTask = {0};
+    if ((int)strlen(title) > titleSize) {
+        printf("Task title max length is only '%d' characters long\n", titleSize);
+        return STATUS_ERROR;
+    }
 
-    strcpy(newTask.title, strtok(taskArgv, ","));
-    strcpy(newTask.description, strtok(NULL, ","));
-    newTask.done = strtok(NULL, ",")[0] == '1' ? 1 : 0;
+    if ((int)strlen(description) > descriptionSize) {
+        printf("Task description max length is only '%d' characters long\n", descriptionSize);
+        return STATUS_ERROR;
+    }
+
+    strncpy(newTask.title, title, titleSize);
+    strncpy(newTask.description, description, descriptionSize);
+    newTask.done = done[0] == '1' ? 1 : 0;
 
     struct Task *temp = realloc(*tasksOut, (header->count + 1) * sizeof(struct Task));
 
@@ -95,28 +110,34 @@ int addTask(struct FileHeader *header, char *taskArgv, struct Task **tasksOut) {
 
 int removeTask(struct FileHeader *header, char *search, struct Task **tasksOut) {
     bool removed = false;
+
     for (int i = 0; i < header->count; i++) {
         if (!removed && checkMatching(&(*tasksOut)[i], search)) removed = true;
         if (removed && i < header->count - 1) (*tasksOut)[i] = (*tasksOut)[i + 1];
     }
-    if (removed) {
-        header->count--;
-        header->size -= sizeof(struct Task);
-        if (header->count == 0) {
-            free(*tasksOut);
-            *tasksOut = NULL;
-            return STATUS_SUCCESS;
-        }
-        struct Task *temp = realloc(*tasksOut, sizeof(struct Task) * header->count);
-        if (!temp) {
-            printf("Failed to reallocate memory\n");
-            return STATUS_ERROR;
-        }
-        *tasksOut = temp;
+
+    if (!removed) {
+        printf("Task isn't found\n");
+        return STATUS_ERROR;
+    }
+
+    header->count--;
+    header->size -= sizeof(struct Task);
+
+    if (header->count == 0) {
+        free(*tasksOut);
+        *tasksOut = NULL;
         return STATUS_SUCCESS;
     }
-    printf("Task isn't found\n");
-    return STATUS_ERROR;
+
+    struct Task *temp = realloc(*tasksOut, sizeof(struct Task) * header->count);
+    if (!temp) {
+        printf("Failed to reallocate memory\n");
+        return STATUS_ERROR;
+    }
+
+    *tasksOut = temp;
+    return STATUS_SUCCESS;
 }
 
 int doneTask(struct FileHeader *header, char *search, struct Task *tasksOut) {
@@ -126,6 +147,7 @@ int doneTask(struct FileHeader *header, char *search, struct Task *tasksOut) {
             return STATUS_SUCCESS;
         }
     }
+
     printf("Task isn't found\n");
     return STATUS_ERROR;
 }
