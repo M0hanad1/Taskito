@@ -19,6 +19,7 @@ It allows you to easily create, view, search, mark, and delete tasks, storing yo
 ## Releases
 
 You can download the release executable for Windows from [here](https://github.com/M0hanad1/Taskito/releases/latest).
+
 For other OS you can edit the Makefile and [build](https://github.com/M0hanad1/Taskito?tab=readme-ov-file#building) yourself.
 
 ---
@@ -113,5 +114,3 @@ Each task consists of:
 - Done status (0 = not done, 1 = done)
 
 All data is stored in a binary file specified by `-f`.
-
----
