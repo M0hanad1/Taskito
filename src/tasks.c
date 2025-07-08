@@ -17,7 +17,7 @@ static bool checkMatching(struct Task *task, char *value) {
     char *search = lower(value);
     bool result = false;
 
-    if (strstr(title, search) && strstr(description, search)) result = true;
+    if (strstr(title, search) || strstr(description, search)) result = true;
     free(title);
     free(description);
     free(search);
@@ -46,7 +46,7 @@ int getTasks(int fileDesc, struct FileHeader *header, struct Task **tasksOut) {
     return STATUS_SUCCESS;
 }
 
-int searchTask(struct FileHeader *header, struct Task *tasks, char *search, struct Task **tasksOut, bool onlyOne) {
+int searchTasks(struct FileHeader *header, struct Task *tasks, char *search, struct Task **tasksOut) {
     int count = 0;
 
     for (int i = 0; i < header->count; i++) {
@@ -61,10 +61,8 @@ int searchTask(struct FileHeader *header, struct Task *tasks, char *search, stru
 
         temp[count - 1] = tasks[i];
         *tasksOut = temp;
-        if (onlyOne) break;
     }
 
-    if (count == 0) printf("Task isn't found\n");
     return count;
 }
 
@@ -111,7 +109,6 @@ int removeTask(struct FileHeader *header, char *search, struct Task **tasksOut) 
         }
         struct Task *temp = realloc(*tasksOut, sizeof(struct Task) * header->count);
         if (!temp) {
-            printf("\n\nhere here here here\n\n");
             printf("Failed to reallocate memory\n");
             return STATUS_ERROR;
         }
@@ -120,4 +117,23 @@ int removeTask(struct FileHeader *header, char *search, struct Task **tasksOut) 
     }
     printf("Task isn't found\n");
     return STATUS_ERROR;
+}
+
+int doneTask(struct FileHeader *header, char *search, struct Task *tasksOut) {
+    for (int i = 0; i < header->count; i++) {
+        if (checkMatching(&tasksOut[i], search)) {
+            tasksOut[i].done = !(tasksOut[i].done);
+            return STATUS_SUCCESS;
+        }
+    }
+    printf("Task isn't found\n");
+    return STATUS_ERROR;
+}
+
+void printTasks(struct Task *tasks, int count) {
+    printf("============\n");
+    for (int i = 0; i < count; i++) {
+        printf("Title: %s\nDescription: %s\nDone: %s\n============\n", tasks[i].title, tasks[i].description, tasks[i].done ? "Yes" : "No");
+    }
+    if (count < 1) printf("There's no tasks\n============\n");
 }

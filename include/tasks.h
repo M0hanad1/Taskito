@@ -11,10 +11,11 @@ struct Task {
     bool done;
 };
 
+int searchTasks(struct FileHeader *header, struct Task *tasks, char *search, struct Task **tasksOut);
 int getTasks(int fileDesc, struct FileHeader *header, struct Task **tasksOut);
 int addTask(struct FileHeader *header, char *taskArgv, struct Task **tasksOut);
 int removeTask(struct FileHeader *header, char *search, struct Task **tasksOut);
-// int doneTask(struct FileHeader *header, struct Task *tasks, char *search);
-int searchTask(struct FileHeader *header, struct Task *tasks, char *search, struct Task **tasksOut, bool onlyOne);
+int doneTask(struct FileHeader *header, char *search, struct Task *tasksOut);
+void printTasks(struct Task *tasks, int count);
 
 #endif

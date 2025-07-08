@@ -22,18 +22,17 @@ int saveData(int fileDesc, struct FileHeader *header, struct Task *tasks) {
         return STATUS_ERROR;
     }
 
-    if (tasks) {
-        for (int i = 0; i < header->count; i++) {
-            if (write(fileDesc, &tasks[i], sizeof(struct Task)) == STATUS_ERROR) {
-                perror("write");
-                return STATUS_ERROR;
-            }
-        }
-    }
-
     if (ftruncate(fileDesc, header->size) == -1) {
         perror("ftruncate");
         return STATUS_ERROR;
+    }
+
+    if (!tasks) return STATUS_SUCCESS;
+    for (int i = 0; i < header->count; i++) {
+        if (write(fileDesc, &tasks[i], sizeof(struct Task)) == STATUS_ERROR) {
+            perror("write");
+            return STATUS_ERROR;
+        }
     }
 
     return STATUS_SUCCESS;
