@@ -6,7 +6,7 @@
 
 struct FileHeader {
     unsigned magic;
-    unsigned short version;
+    double version;
     unsigned short count;
     long size;
 };
