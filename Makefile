@@ -35,7 +35,7 @@ debug: $(TARGET)
 
 # Clean build files
 clean:
-	rm -rf obj/* bin/*
+	rm -rf obj/* *.db
 
 # Optional: rebuild everything
 rebuild: clean all

@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "common.h"
 #include "file.h"
@@ -37,7 +38,7 @@ void usage(char *argv[]) {
     printf("\t -s - Search for tasks in the database: \"-s <search_value>\"\n");
     printf("\t -r - Remove a task from the database: \"-r <search_value>\"\n");
     printf("\t -m - Mark task to the opposite: \"-m <search_value>\"\n");
-    printf("\t -r - get all tasks\n");
+    printf("\t -g - get all tasks\n");
     printf("\t -n - Create a new database file\n");
     printf("\t -d - Delete the whole database\n");
 }
@@ -96,15 +97,18 @@ int main(int argc, char *argv[]) {
         goto cleanup;
     }
 
-    if ((fileDesc = open(flags.file, O_RDWR | (flags.new << 8 & O_CREAT), 0666)) < 0) {
-        printf("Couldn't read the database file");
-        goto cleanup;
-    }
-
     if (flags.new) {
+        if ((fileDesc = open(flags.file, O_RDWR | O_CREAT, 0666)) == STATUS_ERROR) {
+            printf("Couldn't create the database file\n");
+            goto cleanup;
+        }
         if (createHeader(&header) == STATUS_ERROR || HANDLE_SAVE) goto cleanup;
         printf("Database file is created successfully\n");
     } else {
+        if ((fileDesc = open(flags.file, O_RDWR, 0666)) == STATUS_ERROR) {
+            printf("Couldn't read the database file\n");
+            goto cleanup;
+        }
         if (validateHeader(fileDesc, &header) == STATUS_ERROR) goto cleanup;
     }
 
@@ -116,7 +120,7 @@ int main(int argc, char *argv[]) {
     if (entered || flags.get) printTasks(tasks, header->count);
 
     if (flags.search) {
-        struct Task *tasksSearch = {0};
+        struct Task *tasksSearch = NULL;
         int count = searchTasks(header, tasks, flags.search, &tasksSearch);
         if (count > 0) printf("Tasks are found\n");
         printTasks(tasksSearch, count);

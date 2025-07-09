@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "common.h"
 #include "header.h"
@@ -30,13 +31,23 @@ int getTasks(int fileDesc, struct FileHeader *header, struct Task **tasksOut) {
         return STATUS_ERROR;
     }
 
+    if (header->count == 0) {
+        *tasksOut = NULL;
+        return STATUS_SUCCESS;
+    }
+
     struct Task *tasks = calloc(header->count, sizeof(struct Task));
     if (!tasks) {
         printf("Failed to allocate memory for tasks\n");
         return STATUS_ERROR;
     }
 
-    if (read(fileDesc, tasks, header->size) != (int)(header->size - sizeof(struct FileHeader))) {
+    if (lseek(fileDesc, sizeof(struct FileHeader), SEEK_SET) == STATUS_ERROR) {
+        perror("lseek");
+        return STATUS_ERROR;
+    }
+
+    if (read(fileDesc, tasks, header->size - sizeof(struct FileHeader)) == STATUS_ERROR) {
         printf("Failed to read tasks from file\n");
         free(tasks);
         return STATUS_ERROR;
