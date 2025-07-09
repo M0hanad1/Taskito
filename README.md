@@ -18,9 +18,9 @@ It allows you to easily create, view, search, mark, and delete tasks, storing yo
 
 ## Releases
 
-You can download the release executable for Windows from [here](https://github.com/M0hanad1/Taskito/releases/latest).
+You can download the release executable from [here](https://github.com/M0hanad1/Taskito/releases/latest).
 
-For other OS you can edit the Makefile and [build](https://github.com/M0hanad1/Taskito?tab=readme-ov-file#building) yourself.
+And if you want you can build yourself from [here](https://github.com/M0hanad1/Taskito?tab=readme-ov-file#building).
 
 ---
 

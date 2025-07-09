@@ -37,6 +37,10 @@ debug: $(TARGET)
 clean:
 	rm -rf obj/* *.db
 
+# Add O2
+prod: CFLAGS += -O2
+prod: $(TARGET)
+
 # Optional: rebuild everything
 rebuild: clean all
 
